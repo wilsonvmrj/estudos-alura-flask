@@ -1,0 +1,17 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+      config.vm.hostname = "pinguti.mysql"
+      config.vm.box = "debian/stretch64"
+      config.vm.network "forwarded_port", guest: 3306, host: 3306
+      
+      config.vm.provider "virtualbox" do |virtualbox|
+          virtualbox.customize [ "modifyvm", :id, "--cpus", "1" ]
+          virtualbox.customize [ "modifyvm", :id, "--memory", "600" ]
+          
+      end
+end
