@@ -1,41 +1,30 @@
 from flask import Flask, render_template, request, redirect, session, flash, url_for
+from flask_mysqldb import MySQL
+from dao import JogoDao, UsuarioDao
+from models import Jogo,Usuario
+
 
 app = Flask(__name__)
 app.secret_key = 'alura'
 
-class Jogo:
-    def __init__(self,nome,categoria,console):
-        self.nome = nome
-        self.categoria = categoria
-        self.console = console
+app.config['MYSQL_HOST'] = '127.0.0.1'
+app.config['MYSQL_USER'] = 'user_flask'
+app.config['MYSQL_PASSWORD'] ='1234'
+app.config['MYSQL_DB'] = 'jogoteca'
+app.config['MYSQL_PORT'] = 3306
+db = MySQL(app)
 
-class Usuario:
-    def __init__(self,id,nome,senha):
-        self.id = id
-        self.nome = nome
-        self.senha = senha
+jogo_dao = JogoDao(db)
 
-
-usuarios1 = Usuario('wilson','Wilson Magalhaes','1234')
-usuarios2 = Usuario('mimi','Michele Magalhaes','4321')
-usuarios3 = Usuario('jose','Jose das Coves','1234')
-usuarios = {
-            usuarios1.id: usuarios1,
-            usuarios2.id: usuarios2,
-            usuarios3.id: usuarios3,
-}
+usuario_dao = UsuarioDao(db)
 
 
-
-jogo1 = Jogo('Super Mario', 'Ação', 'SNES')
-jogo2 = Jogo('God of War4','Ação','PLAY4')
-jogo3 = Jogo('Mortal Kombat','Ação','PLAY4')
-lista_jogos = [jogo1,jogo2,jogo3]
 
 
 @app.route('/')
 def index():
-    return render_template('lista.html', titulo="Jogos", jogos=lista_jogos)
+    lista = jogo_dao.listar()
+    return render_template('lista.html', titulo="Jogos", jogos=lista)
 
 @app.route('/novo')
 def novo():
@@ -49,8 +38,17 @@ def criar():
     categoria = request.form['categoria']
     console = request.form['console']
     jogo = Jogo(nome,categoria,console)
-    lista_jogos.append(jogo)
+    jogo_dao.salvar(jogo)
     return redirect(url_for('index'))
+
+@app.route('/editar/<int:id>')
+def editar(id):
+    if 'usuario_logado' not in session or session['usuario_logado'] == None:
+        return redirect(url_for('login',proxima=url_for('editar')))
+    jogo = jogo_dao.busca_por_id(id)
+    return render_template('editar.html',titulo='Editando Jogo',jogo=jogo)    
+
+
 
 @app.route('/login')
 def login():
@@ -59,8 +57,8 @@ def login():
 
 @app.route('/autenticar', methods=['POST',])
 def autenticar():
-    if request.form['usuario'] in usuarios:
-        usuario = usuarios[request.form['usuario']]
+    usuario = usuario_dao.buscar_por_id(request.form['usuario'])
+    if usuario:        
         if usuario.senha == request.form['senha']:
             session['usuario_logado'] = usuario.id
             flash(usuario.nome + ' logou com sucesso !')

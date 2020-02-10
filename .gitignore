@@ -147,3 +147,4 @@ pip-selfcheck.json
 .history
 
 # End of https://www.gitignore.io/api/python,linux,visualstudiocode,venv
+mysql-vagrant/
